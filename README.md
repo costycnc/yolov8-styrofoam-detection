@@ -110,6 +110,8 @@ If you capture new photos of the blocks later and want to improve the robot's ac
    
 
    <img width="1350" height="809" alt="image" src="https://github.com/user-attachments/assets/f124ebe1-b0ba-407e-9c88-0647574c5f2e" />
+   <img width="1384" height="794" alt="image" src="https://github.com/user-attachments/assets/81918ac5-b2cd-438c-8892-02febc406efd" />
+
 
 
 
