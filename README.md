@@ -102,7 +102,12 @@ If you capture new photos of the blocks later and want to improve the robot's ac
 2. Modify the training script to load your previously generated `best.pt` file instead of the stock `yolov8n.pt`.
 3. Launch the training process: the AI will not start learning from scratch; instead, it will resume training using the new photos by building on top of its existing knowledge (Fine-tuning)!
 
+## python_editor.py
+
    <img width="1268" height="765" alt="image" src="https://github.com/user-attachments/assets/771f3d2b-0de5-4bce-869b-61ae525ababf" />
+
+## 3_controllo_robot.py
+   
 
    <img width="1350" height="809" alt="image" src="https://github.com/user-attachments/assets/f124ebe1-b0ba-407e-9c88-0647574c5f2e" />
 
