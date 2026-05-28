@@ -175,6 +175,20 @@ For deeper technical documentation regarding YOLOv8 settings, training arguments
 * **YOLOv8 Predict Mode Guide:** [https://ultralytics.commodes/predict/](https://ultralytics.commodes/predict/) - Technical layout of how bounding box coordinates (`xyxy`), labels, and confidence thresholds are handled in real-time streams.
 * **YOLOv8 GitHub Repository:** [https://github.com](https://github.com) - Source code, official issue tracking, and community discussions.
 
+---
+
+## 📷 Running Standalone AI Vision (`vision_default.py`)
+
+If you want to test the camera detection system without connecting the robot hardware or sending G-code commands, you can run the default vision script. It tracks all 80 standard objects simultaneously in real-time.
+
+```bash
+python vision_default.py
+```
+
+* **No Hardware Required:** This script runs completely independent of the serial port (`COM3`).
+* **Global Detection:** Every standard object placed in front of the webcam will instantly receive a green bounding box and its confidence score.
+
+
 
 
 
