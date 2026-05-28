@@ -112,6 +112,70 @@ If you capture new photos of the blocks later and want to improve the robot's ac
    <img width="1350" height="809" alt="image" src="https://github.com/user-attachments/assets/f124ebe1-b0ba-407e-9c88-0647574c5f2e" />
    <img width="1384" height="794" alt="image" src="https://github.com/user-attachments/assets/81918ac5-b2cd-438c-8892-02febc406efd" />
 
+   ---
+
+## 🎯 Advanced Usage: Tracking Standard Objects (No Training Required)
+
+You can run the system immediately using standard real-world objects without any custom training. The system natively leverages the pre-trained COCO dataset embedded inside `yolov8n.pt`. 
+
+### 🛠️ How to Modify Your Original Script
+To switch from your custom styrofoam model to standard objects, make these 3 quick updates in your code:
+
+1. **Change the model initialization:**
+   ```python
+   # Replace your best.pt path with the stock weights
+   modello = YOLO("yolov8n.pt") 
+   ```
+2. **Define the target ID at the top of your parameters:**
+   ```python
+   CLASSE_DA_INSEGUIRE = 39  # Example: 39 for a bottle
+   ```
+3. **Update the class filter condition inside the loop:**
+   ```python
+   # Change this: if cls_id == 0:
+   # Into this:
+   if cls_id == CLASSE_DA_INSEGUIRE:
+   ```
+
+*Note: The system will only draw the red bounding box and send G-code commands for the **selected object ID**. All other detected objects will be safely ignored.*
+
+### 📊 Complete COCO Dataset Object ID Reference Table
+
+
+| ID | Object Name | ID | Object Name | ID | Object Name | ID | Object Name |
+| :---: | :--- | :---: | :--- | :---: | :--- | :---: | :--- |
+| **0** | person | **20** | sheep | **40** | wine glass | **60** | dining table |
+| **1** | bicycle | **21** | cow | **41** | cup | **61** | toilet |
+| **2** | car | **22** | elephant | **42** | fork | **62** | tv |
+| **3** | motorcycle | **23** | bear | **43** | knife | **63** | laptop |
+| **4** | airplane | **24** | zebra | **44** | spoon | **64** | mouse |
+| **5** | bus | **25** | giraffe | **45** | bowl | **65** | remote |
+| **6** | train | **26** | backpack | **46** | banana | **66** | keyboard |
+| **7** | truck | **27** | umbrella | **47** | apple | **67** | cell phone |
+| **8** | boat | **28** | handbag | **48** | sandwich | **68** | microwave |
+| **9** | traffic light | **29** | tie | **49** | orange | **69** | oven |
+| **10** | fire hydrant | **30** | suitcase | **50** | broccoli | **70** | toaster |
+| **11** | stop sign | **31** | frisbee | **51** | carrot | **71** | sink |
+| **12** | parking meter | **32** | skis | **52** | hot dog | **72** | refrigerator |
+| **13** | bench | **33** | snowboard | **53** | pizza | **73** | book |
+| **14** | bird | **34** | sports ball | **54** | donut | **74** | clock |
+| **15** | cat | **35** | kite | **55** | cake | **75** | vase |
+| **16** | dog | **36** | baseball bat | **56** | chair | **76** | scissors |
+| **17** | horse | **37** | baseball glove | **57** | couch | **77** | teddy bear |
+| **18** | sheep | **38** | skateboard | **58** | potted plant | **78** | hair drier |
+| **19** | cow | **39** | bottle | **59** | bed | **79** | toothbrush |
+
+---
+
+## 📚 Official Documentation & References
+
+For deeper technical documentation regarding YOLOv8 settings, training arguments, and model prediction formats, refer to the following official resources:
+
+* **Official Ultralytics Docs:** [https://ultralytics.com](https://ultralytics.com) - Comprehensive guides on custom training, datasets, and hyperparameters.
+* **YOLOv8 Predict Mode Guide:** [https://ultralytics.commodes/predict/](https://ultralytics.commodes/predict/) - Technical layout of how bounding box coordinates (`xyxy`), labels, and confidence thresholds are handled in real-time streams.
+* **YOLOv8 GitHub Repository:** [https://github.com](https://github.com) - Source code, official issue tracking, and community discussions.
+
+
 
 
 
