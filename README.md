@@ -1,6 +1,3 @@
-# yolov8-styrofoam-detection
-YOLOv8 training and dataset validator for detecting styrofoam pieces on a conveyor belt system.
-
 # YOLOv8 Styrofoam Detection System
 
 This repository contains the dataset validator script and the custom training pipeline using YOLOv8 to detect styrofoam pieces on a conveyor belt system.
