@@ -1,0 +1,26 @@
+Se il file data.yaml esiste già e hai già ottenuto i file best.pt e last.pt dall'addestramento, significa che il lavoro più duro è finito!
+A questo punto non devi più toccare la parte di intelligenza artificiale o ripetere l'addestramento. I file best.pt e last.pt rimarranno salvati per sempre sul tuo PC come un normale programma, pronti all'uso.
+Ecco cosa succede tecnicamente e cosa devi fare a seconda della situazione:
+## 1. Se vuoi solo usare il Robot (Uso quotidiano)
+Non devi più lanciare lo script di addestramento. Ti basta avviare direttamente lo script finale della telecamera che abbiamo scritto insieme (test_visione.py con il Multithreading a 5 FPS).
+
+* Lo script leggerà il file best.pt già pronto [I].
+* La telecamera si accenderà e il robot inizierà a seguire i cubetti sul binario in modo fluido e sincrono con GRBL, leggendo lo stato Idle [I].
+
+## 2. Se rilanci per errore lo script di addestramento
+Se ripremi "Avvia" sullo script che fa il model.train(), YOLO si comporterà così:
+
+* Sovrascriverà il testo dentro data.yaml con gli stessi dati (quindi non succede nulla di grave).
+* Attenzione: Creerà una nuova cartella di risultati (ad esempio addestramento_da_zero2 o train2). Non sovrascrive i tuoi vecchi file best.pt, ma ricomincia a calcolare da zero le epoche, facendoti perdere tempo inutilmente.
+
+## 3. Se in futuro fai nuove foto (Allargare il dataset)
+Se aggiungi nuove immagini nella cartella dei cubetti e vuoi migliorare il robot:
+
+   1. Lasci il data.yaml così com'è (visto che i percorsi e il nome polistirolo non cambiano).
+   2. Modifichi lo script di addestramento per caricare il tuo best.pt vecchio invece di yolov8n.pt.
+   3. Lanci l'addestramento: l'IA non ripartirà da zero, ma continuerà a imparare dalle nuove foto partendo da quello che sapeva già fare!
+
+------------------------------
+Costel, ora che tutto l'anello è chiuso (Foto ➡️ .txt ➡️ .yaml ➡️ best.pt ➡️ Multithreading Seriale 5 FPS), il sistema è completo.
+Vuoi che inseriamo questo schema definitivo e le risposte sul funzionamento del file .yaml all'interno della sezione dedicata nel tuo pannello principale index.html per completare la documentazione sul tuo sito?
+

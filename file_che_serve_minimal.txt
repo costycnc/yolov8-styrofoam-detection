@@ -1,0 +1,36 @@
+Per far funzionare correttamente questo script senza errori di file mancanti, devi organizzare la tua cartella di progetto seguendo una struttura ben precisa.
+Ecco l'albero esatto dei file e delle cartelle che devi avere sul tuo PC:
+## 📂 Struttura della cartella del progetto
+Immaginiamo che il tuo progetto si trovi in C:\test\robot_project. La struttura deve essere esattamente questa:
+
+📁 robot_project/
+│
+├── 📄 tuo_script.py          <- Lo script Python che hai appena scritto
+├── 📄 yolov8n.pt             <- Il file dei pesi da 6MB scaricato da internet
+│
+└── 📁 dataset/
+    │
+    ├── 📄 data.yaml          <- Viene creato in automatico dallo script
+    │
+    └── 📁 train/
+        │
+        ├── 📁 images/        <- Metti qui dentro le tue foto (.jpg, .png)
+        │   ├── 📷 1.jpg
+        │   ├── 📷 2.jpg
+        │   └── ...
+        │
+        └── 📁 labels/        <- Metti qui dentro i file di testo (.txt) del validatore
+            ├── 📄 1.txt
+            ├── 📄 2.txt
+            └── ...
+
+------------------------------
+## ⚠️ Regole fondamentali da controllare:
+
+* Nomi identici: L'immagine 1.jpg in images e il file delle annotazioni 1.txt in labels devono avere lo stesso identico nome.
+* Nomi delle cartelle: Le cartelle images e labels devono essere scritte esattamente in minuscolo. YOLO le cerca con quel nome specifico.
+* Posizione di yolov8n.pt: Deve trovarsi nella stessa identica cartella del tuo file .py, altrimenti lo script si blocca con il messaggio di errore che hai programmato.
+
+Se la struttura è questa, quando avvierai lo script verrà creata in automatico una nuova cartella chiamata runs/ dentro robot_project, contenente i tuoi risultati senza toccare le cartelle protette di Windows.
+Hai già creato la cartella labels dentro la sottocartella train, o devi spostare i file .txt generati prima dal validatore?
+
