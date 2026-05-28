@@ -40,111 +40,113 @@ except Exception as e:
 # ==========================================
 # 3. PARAMETRI DI ALLINEAMENTO PASSO-PASSO
 # ==========================================
-SOGLIA_VICINO = 25  # Sotto i 25 pixel di errore, passa alla precisione (1mm)
-ZONA_MORTA = 6      # Sotto i 6 pixel di errore, il robot è al Punto 0 (si ferma)
+SOGLIA_VICINO = 25  
+ZONA_MORTA = 6      
 
-in_movimento = False
-passo_attuale = "FERMO"
-ultimo_controllo_stato = 0
+# 🛠️ CORREZIONE DEFINITIVA PER WINDOWS: Usiamo cv2.CAP_DSHOW per evitare il bug MSMF
+cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
-cap = cv2.VideoCapture(0)
-print("\n[+] AVVIATO SISTEMA PASSO-PASSO COSTYCNC CON BLOCCO DI SICUREZZA VUOTO!")
+print("\n[+] AVVIATO SISTEMA SCATTO SINGOLO COSTYCNC!")
+print("[*] Inizializzazione DirectShow della webcam...")
+
+# Piccolo warm-up per stabilizzare l'hardware
+for i in range(5):
+    cap.read()
+    time.sleep(0.05)
+
 print("[*] Premi 'q' sulla finestra video per chiudere.\n")
 
 while cap.isOpened():
+    # Scatto del fotogramma statico a motore fermo
     success, frame = cap.read()
+    
+    # Se fallisce un singolo frame per interferenza, riprova senza bloccarsi
     if not success:
-        break
+        time.sleep(0.01)
+        continue
 
     altezza, larghezza, _ = frame.shape
     centro_x = int(larghezza / 2)
 
-    # ==================================================
-    # 4. CONTROLLO DELLO STATO REALE (RUN / IDLE) DI GRBL
-    # ==================================================
-    if robot and robot.is_open and in_movimento:
-        ora_attuale = time.time()
-        if ora_attuale - ultimo_controllo_stato > 0.2:
-            robot.write(b"?")
-            ultimo_controllo_stato = ora_attuale
-        
-        if robot.in_waiting > 0:
-            linea_ricevuta = robot.readline().decode('utf-8', errors='ignore').strip()
-            if "Idle" in linea_ricevuta:
-                print(f"[ROBOT] Rilevato stato 'Idle'. Asse fermo. Sblocco la telecamera.")
-                in_movimento = False
-                passo_attuale = "FERMO"
-                robot.reset_input_buffer()
+    # Passa l'immagine statica a YOLO
+    risultati = modello(frame, conf=0.15, verbose=False)
+    cubetto_rilevato = False
+    errore_x = 0
+    x1, y1, x2, y2 = 0, 0, 0, 0
+    cubetto_centro_x, cubetto_centro_y = 0, 0
 
-    # Se il robot è fermo, l'IA analizza lo spazio
-    if not in_movimento:
-        risultati = modello(frame, conf=0.15, verbose=False)
-        cubetto_rilevato = False
-        errore_x = 0
-
-        for r in risultati:
-            if r.boxes is not None:
-                for box in r.boxes:
-                    cls_id = int(box.cls.item())
-                    
-                    if cls_id == 0:
-                        # CORREZIONE BLINDATA: Estrazione esatta ad indice [0] per avere la lista piatta di numeri
-                        x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
-                        
-                        cubetto_centro_x = int((x1 + x2) / 2)
-                        cubetto_centro_y = int((y1 + y2) / 2)
-                        errore_x = cubetto_centro_x - centro_x
-                        cubetto_rilevato = True
-
-                        # Disegno degli elementi grafici sul monitor video
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
-                        cv2.circle(frame, (cubetto_centro_x, cubetto_centro_y), 5, (255, 255, 0), -1)
-                        cv2.line(frame, (centro_x, cubetto_centro_y), (cubetto_centro_x, cubetto_centro_y), (0, 255, 0), 2)
-                        cv2.putText(frame, f"Polistirolo: Err {errore_x}px", (x1, y1 - 10), 
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-                        break
-                if cubetto_rilevato:
+    for r in risultati:
+        if r.boxes is not None:
+            for box in r.boxes:
+                if int(box.cls.item()) == 0:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0].tolist()) 
+                    cubetto_centro_x = int((x1 + x2) / 2)
+                    cubetto_centro_y = int((y1 + y2) / 2)
+                    errore_x = cubetto_centro_x - centro_x
+                    cubetto_rilevato = True
                     break
+            if cubetto_rilevato:
+                break
 
-        # ==========================================
-        # LOGICA HARDWARE CON CONTROLLO DI RILEVAMENTO
-        # ==========================================
-        if cubetto_rilevato:
-            abs_errore = abs(errore_x)
-            segno = 1 if errore_x > 0 else -1
+    # ==================================================
+    # 4. DISEGNO GRAFICO SULLO SCATTO FISSO ATTUALE
+    # ==================================================
+    if cubetto_rilevato:
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+        cv2.circle(frame, (cubetto_centro_x, cubetto_centro_y), 5, (255, 255, 0), -1)
+        cv2.line(frame, (centro_x, cubetto_centro_y), (cubetto_centro_x, cubetto_centro_y), (0, 255, 0), 2)
+        cv2.putText(frame, f"Polistirolo: Err {errore_x}px", (x1, y1 - 10), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
-            if abs_errore > ZONA_MORTA:
-                if abs_errore > SOGLIA_VICINO:
-                    mm_da_fare = 10 * segno
-                    passo_attuale = "10mm"
-                    comando_gcode = f"G91 G01 X{mm_da_fare} F1000\r"
-                    print(f"[IA LONTANO] Err: {errore_x}px. Invio {passo_attuale} -> {comando_gcode.strip()}")
-                else:
-                    mm_da_fare = 1 * segno
-                    passo_attuale = "1mm"
-                    comando_gcode = f"G91 G01 X{mm_da_fare} F500\r"
-                    print(f"[IA VICINO] Err: {errore_x}px. Invio {passo_attuale} -> {comando_gcode.strip()}")
-
-                if robot and robot.is_open:
-                    robot.write(comando_gcode.encode('utf-8'))
-                    in_movimento = True  
-            else:
-                print("[PUNTO 0] Allineato al centro!")
-                cv2.putText(frame, "STATO: CENTRATO (PUNTO 0)", (10, 30), 
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-        else:
-            # Se l'IA non vede nulla, i motori rimangono spenti e l'asse immobile
-            cv2.putText(frame, "STATO: NESSUN PEZZO RILEVATO (MOTORI FERMI)", (10, 30), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-    else:
-        cv2.putText(frame, f"MOTORI IN MOVIMENTO FISICO: {passo_attuale}", (10, 30), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
-
-    # Disegno della mezzeria centrale fissa gialla (Asse del robot)
     cv2.line(frame, (centro_x, 0), (centro_x, altezza), (0, 255, 255), 2)
-    cv2.imshow("CostyCNC Labs - Monitor Visione AI & Hardware Link", frame)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    # ==================================================
+    # 5. LOGICA HARDWARE E ATTESA BLOCCANTE DEL MOVIMENTO
+    # ==================================================
+    if cubetto_rilevato:
+        abs_errore = abs(errore_x)
+        segno = 1 if errore_x > 0 else -1
+
+        if abs_errore > ZONA_MORTA:
+            if abs_errore > SOGLIA_VICINO:
+                mm_da_fare = 10 * segno
+                passo_attuale = "10mm"
+                comando_gcode = f"G91 G01 X{mm_da_fare} F1000\r"
+            else:
+                mm_da_fare = 1 * segno
+                passo_attuale = "1mm"
+                comando_gcode = f"G91 G01 X{mm_da_fare} F500\r"
+
+            print(f"[FOTO ELABORATA] Err: {errore_x}px. Invio -> {comando_gcode.strip()}")
+            cv2.putText(frame, f"Esecuzione asse: {passo_attuale}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+            cv2.imshow("CostyCNC Labs - Monitor Visione AI & Hardware Link", frame)
+            cv2.waitKey(1)
+
+            # Invia il comando al robot
+            if robot and robot.is_open:
+                robot.write(comando_gcode.encode('utf-8'))
+                time.sleep(0.15) 
+                
+                # Ciclo di attesa basato sullo stato Idle
+                mentre_muove = True
+                while mentre_muove:
+                    robot.write(b"?")
+                    time.sleep(0.1)
+                    if robot.in_waiting > 0:
+                        risposta = robot.readline().decode('utf-8', errors='ignore').strip()
+                        if "Idle" in risposta:
+                            print("[ROBOT] Movimento completato con successo. Sblocco per prossima foto.")
+                            mentre_muove = False
+                robot.reset_input_buffer()
+        else:
+            print("[PUNTO 0] Allineato al centro!")
+            cv2.putText(frame, "STATO: CENTRATO (PUNTO 0)", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+            cv2.imshow("CostyCNC Labs - Monitor Visione AI & Hardware Link", frame)
+    else:
+        cv2.putText(frame, "STATO: VUOTO - ATTESA PEZZO", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+        cv2.imshow("CostyCNC Labs - Monitor Visione AI & Hardware Link", frame)
+
+    if cv2.waitKey(30) & 0xFF == ord('q'):
         break
 
 if robot:
